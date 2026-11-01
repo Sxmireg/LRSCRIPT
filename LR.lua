@@ -57,7 +57,7 @@ UIListLayout.Parent = ScrollFrame
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 5)
 
--- 2. LÓGICA DE ESCANEO DE SERVIDORES IDEALES
+-- 2. LÓGICA DE ESCANEO DE SERVIDORES IDEALES (CORREGIDO)
 print("🔍 Buscando salas libres para huevos grandes...")
 local url = string.format("https://roblox.com", PlaceId)
 
