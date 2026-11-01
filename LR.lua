@@ -1,16 +1,22 @@
--- RADAR PERSONAL DE SERVIDORES CON PROXY PARA CELL (KEYLESS)
+-- RADAR PERSONAL DE SERVIDORES PARA DELTA V650+ (KEYLESS)
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
 
 local PlaceId = game.PlaceId
 local LocalPlayer = Players.LocalPlayer
+-- Usamos PlayerGui para evitar los bloqueos de seguridad de Delta en CoreGui
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- Destruir interfaz vieja si ya existía para evitar que se duplique
+if PlayerGui:FindFirstChild("RadarPersonalGui") then
+    PlayerGui.RadarPersonalGui:Destroy()
+end
 
 -- 1. CREACIÓN DE LA INTERFAZ GRÁFICA FLOTANTE
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "RadarPersonalGui"
-ScreenGui.Parent = CoreGui
+ScreenGui.Parent = PlayerGui
 ScreenGui.ResetOnSpawn = false
 
 local MainFrame = Instance.new("Frame")
@@ -52,9 +58,8 @@ UIListLayout.Parent = ScrollFrame
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 5)
 
--- 2. LÓGICA CON PROXY PARA EVITAR EL BLOQUEO
-print("🔍 Buscando salas...")
--- Usamos roproxy.com para saltar el bloqueo de Roblox en Delta
+-- 2. LÓGICA DE ESCANEO DE SERVIDORES CON PROXY
+print("🔍 Escaneando servidores activos...")
 local url = string.format("https://roproxy.com", PlaceId)
 
 local success, result = pcall(function()
@@ -85,7 +90,7 @@ if success then
                 ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y)
                 
                 ServerBtn.MouseButton1Click:Connect(function()
-                    ServerBtn.Text = "Teletransportando..."
+                    ServerBtn.Text = "Saltando..."
                     ServerBtn.TextColor3 = Color3.fromRGB(255, 255, 0)
                     task.wait(0.5)
                     TeleportService:TeleportToPlaceInstance(PlaceId, server.id, LocalPlayer)
@@ -102,5 +107,5 @@ if success then
         end
     end
 else
-    Title.Text = "❌ Error de Conexión"
+    Title.Text = "❌ Error de Red / Proxy"
 end
