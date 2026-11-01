@@ -1,14 +1,13 @@
--- RADAR PERSONAL DE SERVIDORES PARA DELTA V650+ (KEYLESS)
+-- RADAR PERSONAL DE SERVIDORES CON PROXY PREMIUM (KEYLESS)
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 
 local PlaceId = game.PlaceId
 local LocalPlayer = Players.LocalPlayer
--- Usamos PlayerGui para evitar los bloqueos de seguridad de Delta en CoreGui
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- Destruir interfaz vieja si ya existía para evitar que se duplique
+-- Eliminar interfaz vieja si ya existía para refrescar la carga
 if PlayerGui:FindFirstChild("RadarPersonalGui") then
     PlayerGui.RadarPersonalGui:Destroy()
 end
@@ -58,9 +57,10 @@ UIListLayout.Parent = ScrollFrame
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 5)
 
--- 2. LÓGICA DE ESCANEO DE SERVIDORES CON PROXY
+-- 2. LÓGICA DE ESCANEO CON PROXY DE RESPALDO (CORREGIDO)
 print("🔍 Escaneando servidores activos...")
-local url = string.format("https://roproxy.com", PlaceId)
+-- Cambiamos a la API directa usando un puente HTTP optimizado para scripts móviles
+local url = "https://roproxy.com" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
 
 local success, result = pcall(function()
     return game:HttpGet(url)
@@ -105,7 +105,35 @@ if success then
         if count == 0 then
             Title.Text = "❌ No hay salas pequeñas"
         end
+    else
+        Title.Text = "❌ Error al leer datos de salas"
     end
 else
-    Title.Text = "❌ Error de Red / Proxy"
+    Title.Text = "❌ Reintentando conexión..."
+    -- Intento secundario sin Proxy por si tu ejecutor ya tiene soporte nativo actualizado
+    task.wait(1)
+    local url2 = "https://roblox.com" .. PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local s2, r2 = pcall(function() return game:HttpGet(url2) end)
+    if s2 then
+        local data2 = HttpService:JSONDecode(r2)
+        if data2 and data2.data then
+            local count = 0
+            for _, server in pairs(data2.data) do
+                if server.playing >= 1 and server.playing <= 5 and server.id ~= game.JobId then
+                    count = count + 1
+                    local ServerBtn = Instance.new("TextButton")
+                    ServerBtn.Size = UDim2.new(1, -5, 0, 35)
+                    ServerBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                    ServerBtn.Text = string.format("Sala #%d (%d/%d)", count, server.playing, server.maxPlayers)
+                    ServerBtn.TextColor3 = Color3.fromRGB(0, 255, 150)
+                    ServerBtn.Parent = ScrollFrame
+                    ServerBtn.MouseButton1Click:Connect(function()
+                        TeleportService:TeleportToPlaceInstance(PlaceId, server.id, LocalPlayer)
+                    end)
+                    if count >= 8 then break end
+                end
+            end
+            if count > 0 then Title.Text = "🥚 RADAR: Huevos Grandes" end
+        end
+    end
 end
